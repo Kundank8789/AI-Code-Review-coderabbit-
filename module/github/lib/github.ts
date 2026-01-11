@@ -10,13 +10,13 @@ export const getGithubToken = async () => {
     if (!session) {
         throw new Error("Not authenticated");
     }
-    const account = await prisma.account.findUnique({
+    const account = await prisma.account.findFirst({
         where: {
             userId: session.user.id,
             providerId: "github"
         }
     })
-    if (!account) {
+    if (!account?.accessToken) {
         throw new Error(" No GitHub access token found");
     }
     return account.accessToken;
@@ -25,23 +25,24 @@ export const getGithubToken = async () => {
 export async function fetchUserContribution(token: string, username: string) {
     const octokit = new Octokit({ auth: token });
     const query = `
-    query($username: String!) {
-      user(login: $username) {
-        contributionsCollection {
-            contributionCalendar {
-                totalContributions{
-                    weeks{
-                        contributionDays{
-                        contributionCount
-                        date
-                        color
-                        }
-                    }
-                }
-            }
+query ($username: String!) {
+  user(login: $username) {
+    contributionsCollection {
+      contributionCalendar {
+        totalContributions
+        weeks {
+          contributionDays {
+            date
+            contributionCount
+            color
+          }
         }
       }
-    }`;
+    }
+  }
+}
+`;
+
 
 
 
@@ -52,4 +53,19 @@ export async function fetchUserContribution(token: string, username: string) {
         console.error("Error fetching user contribution:", error);
 
     }
+}
+
+export const getRepositories = async (page:number=1, per_page:number=10) => {
+    const token = await getGithubToken();
+    const octokit = new Octokit({ auth: token });
+    
+        const {data} = await octokit.rest.repos.listForAuthenticatedUser({
+            sort: "updated",
+            direction:"desc",
+            visibility:"all",
+            per_page: per_page,
+            page: page
+        });
+        return data;
+    
 }
