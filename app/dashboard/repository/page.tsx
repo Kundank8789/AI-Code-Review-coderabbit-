@@ -8,6 +8,7 @@ import { ExternalLink, Star, Search } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { useRepositories } from '@/module/repository/hooks/use-repositories'
 import { RepositoryListSkeleton } from '@/module/repository/components/repository-skeleton'
+import { useConnectRepository } from '@/module/repository/hooks/use-connect-repository'
 
 
 interface Repository {
@@ -32,21 +33,23 @@ const RepositoryPage = () => {
         isFetchingNextPage,
     } = useRepositories();
 
+    const {mutate: connectRepo} = useConnectRepository();
+
     const [seaechQuery, setSearchQuery] = useState("")
     const [localConnectingId, setLocalConnectingId] = useState<number | null>(null)
-    const observerTarget = useRef<HTMLDivElement >(null);
+    const observerTarget = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            (entries)=> {
+            (entries) => {
                 if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
                     fetchNextPage();
+                }
+            },
+            {
+                threshold: 0.1,
             }
-        },
-        {
-            threshold: 0.1,
-        }
-        ) 
+        )
         const currentTarget = observerTarget.current;
         if (currentTarget) {
             observer.observe(currentTarget);
@@ -58,12 +61,12 @@ const RepositoryPage = () => {
         }
     }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-    if(isLoading){
+    if (isLoading) {
         return (
             <div className='space-y-4'>
                 <div>
-                <h1 className='text-3xl font-bold tracking-tight'>Repositories</h1>
-                <p className='text-muted-foreground'>Manage and view  all your GitHub repositories</p>
+                    <h1 className='text-3xl font-bold tracking-tight'>Repositories</h1>
+                    <p className='text-muted-foreground'>Manage and view  all your GitHub repositories</p>
                 </div>
                 <RepositoryListSkeleton />
             </div>
@@ -77,7 +80,21 @@ const RepositoryPage = () => {
         repo.full_name.toLowerCase().includes(seaechQuery.toLowerCase())
     );
 
-    const handleConnect = (repo: Repository) => { }
+    const handleConnect = (repo: Repository) => {
+        setLocalConnectingId(repo.id);
+        connectRepo(
+            {
+                owner: repo.full_name.split("/")[0],
+                repo: repo.name,
+                githubId: repo.id,
+            },
+            {
+                onSettled: () => setLocalConnectingId(null)
+            },
+
+        );
+    }
+
 
     return (
         <div className='space-y-4'>
@@ -131,9 +148,9 @@ const RepositoryPage = () => {
                 </div>
                 <div ref={observerTarget} className='py-4'>
                     {isFetchingNextPage && <RepositoryListSkeleton />}
-                    {!hasNextPage &&  allRepositories.length> 0 &&(
+                    {!hasNextPage && allRepositories.length > 0 && (
                         <p className='text-center text-muted-foreground'>No more repositories</p>
-                    ) }
+                    )}
                 </div>
             </div>
         </div>
