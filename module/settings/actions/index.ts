@@ -73,22 +73,22 @@ export async function updateUserProfile(data: { name?: string; email?: string })
 export async function getConnectedRepositories() {
     try {
         const session = await auth.api.getSession({
-            headers:await headers()
+            headers: await headers()
         })
-        if(!session?.user){
+        if (!session?.user) {
             throw new Error("Unauthorized")
         }
         const repositories = await prisma.repository.findMany({
-            where:{userId:session.user.id},
-            select:{
-                id:true,
-                name:true,
-                fullName:true,
-                url:true,
-                createdAt:true
+            where: { userId: session.user.id },
+            select: {
+                id: true,
+                name: true,
+                fullName: true,
+                url: true,
+                createdAt: true
             },
-            orderBy:{
-                createdAt:"desc"
+            orderBy: {
+                createdAt: "desc"
             }
         })
         return repositories;
@@ -98,65 +98,67 @@ export async function getConnectedRepositories() {
     }
 }
 
-export  async function disconnectRepository(repositoriesId:string){
+export async function disconnectRepository(repositoriesId: string) {
     try {
-         const session = await auth.api.getSession({
-            headers:await headers()
+        const session = await auth.api.getSession({
+            headers: await headers()
         })
-        if(!session?.user){
+        if (!session?.user) {
             throw new Error("Unauthorized")
         }
-        const repository= await prisma.repository.findUnique({
-            where:{
-                id:repositoriesId,
-                userId:session.user.id
+        const repository = await prisma.repository.findUnique({
+            where: {
+                id: repositoriesId,
+                userId: session.user.id
             }
         })
-        if(!repository){
+        if (!repository) {
             throw new Error("Repository not found")
         }
-        await deleteWebhook(repository.owner,repository.name)
+        await deleteWebhook(repository.owner, repository.name)
         await prisma.repository.delete({
-            where:{
-                id:repositoriesId,
-                userId:session.user.id
+            where: {
+                id: repositoriesId,
+                userId: session.user.id
             }
         });
         revalidatePath("/dashboard/settings", "page");
         revalidatePath("/dashboard/repositories", "page")
-        return {success:true}
+        return { success: true }
     } catch (error) {
         console.error("Error disconnecting repository:", error)
-        return {success:false,error:"Failed to disconnect repository"}
+        return { success: false, error: "Failed to disconnect repository" }
     }
 }
 
-export async function disconnectAllRepositories(){
+export async function disconnectAllRepositories() {
     try {
-          const session = await auth.api.getSession({
-            headers:await headers()
+        const session = await auth.api.getSession({
+            headers: await headers()
         })
-        if(!session?.user){
+        if (!session?.user) {
             throw new Error("Unauthorized")
         }
-        const repositories= await prisma.repository.findMany({
-            where:{
-                userId:session.user.id
+        const repositories = await prisma.repository.findMany({
+            where: {
+                userId: session.user.id
             },
         })
-        await Promise.all(repositories.map(async(repo)=>{
-            await deleteWebhook(repo.owner,repo.name)
+        await Promise.all(repositories.map(async (repo) => {
+            await deleteWebhook(repo.owner, repo.name)
         }))
-        const result= await prisma.repository.deleteMany({
-            where:{
-                userId:session.user.id
+        const result = await prisma.repository.deleteMany({
+            where: {
+                userId: session.user.id
             },
         });
         revalidatePath("/dashboard/settings", "page");
         revalidatePath("/dashboard/repositories", "page")
-        return {success:true,count:result.count}
+        return { success: true, count: result.count }
     } catch (error) {
         console.error("Error disconnecting all repositories:", error)
-        return {success:false,error:"Failed to disconnect all repositories"
+        return {
+            success: false, error: "Failed to disconnect all repositories"
+        }
     }
 }

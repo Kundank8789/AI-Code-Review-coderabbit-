@@ -16,20 +16,20 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-export function repositoryList() {
+export function RepositoryList() {
     const queryClient = useQueryClient();
     const [disconnectAllOpen, setDisconnectAllOpen] = useState(false);
+
     const { data: repositories, isLoading } = useQuery({
         queryKey: ["connected-repositories"],
-        queryFn: async () => await getConnectedRepositories(),
+        queryFn: getConnectedRepositories,
         staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
-   
-    
-     const disconnectAllMutation = useMutation({
+
+    const disconnectedRepoMutation = useMutation({
         mutationFn: async (repositoryId: string) => {
-            return await disconnectRepository(repositoryId);
+            return disconnectRepository(repositoryId);
         },
         onSuccess: (result) => {
             if (result?.success) {
@@ -40,5 +40,5 @@ export function repositoryList() {
                 toast.error(result?.error || "Failed to disconnect repository");
             }
         },
-    }); 
-}
+    })
+};
