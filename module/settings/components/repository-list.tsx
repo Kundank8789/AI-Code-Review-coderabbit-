@@ -8,13 +8,12 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getConnectedRepositories, disconnectRepository, disconnectAllRepositories } from "@/module/settings/actions";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { AlertTriangle, ExternalLink, ExternalLinkIcon, Trash2 } from "lucide-react";
+import { AlertTriangle, ExternalLink,  Trash2 } from "lucide-react";
 
 export function RepositoryList() {
     const queryClient = useQueryClient();
@@ -41,6 +40,22 @@ export function RepositoryList() {
             }
         },
     });
+    const disconnectAllMutation = useMutation({
+  mutationFn: async () => {
+    return await disconnectAllRepositories();
+  },
+  onSuccess: (result) => {
+    if (result?.success) {
+      queryClient.invalidateQueries({ queryKey: ["connected-repositories"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      toast.success("All repositories disconnected successfully");
+      setDisconnectAllOpen(false);
+    } else {
+      toast.error(result?.error || "Failed to disconnect all repositories");
+    }
+  },
+});
+
     if (isLoading) {
         return (
             <Card>
@@ -118,7 +133,7 @@ export function RepositoryList() {
                                             <a
                                             href={repo.url}
                                             target="_blank"
-                                            rel="noorpener noreferrer"
+                                            rel="noopener noreferrer"
                                             className="text-muted-foreground hover:text-foreground"
                                             >
                                                 <ExternalLink className="h-4 w-4"/>
