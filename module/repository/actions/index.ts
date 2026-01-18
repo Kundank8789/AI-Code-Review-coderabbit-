@@ -3,6 +3,7 @@ import prisma from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { createWebhook, getRepositories } from "@/module/github/lib/github"
+import { inngest } from "@/inngest/client"
 
 export const fetchRepositories = async (page: number = 1, per_page: number = 10) => {
     const session = await auth.api.getSession({
@@ -51,6 +52,18 @@ export const connectRepository = async (owner: string, repo: string, githubId: n
                 userId: session.user.id,
             }
         });
+    }
+    try {
+        await inngest.send({
+            name:"repository.connected",
+            data: {
+                owner,
+                repo,
+                userId: session.user.id
+            }
+        })
+    } catch (error) {
+        console.error("failed to trigger repository indexing:",error);
     }
     return webhooks;
 } 
