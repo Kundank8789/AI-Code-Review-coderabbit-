@@ -1,9 +1,10 @@
 import { inngest } from "../client";
-import { getPullRequestDiff } from "@/module/github/lib/github";
+import { getPullRequestDiff, postReviewComment } from "@/module/github/lib/github";
 import { retriveContext } from "@/module/ai/lib/rag";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import prisma from "@/lib/db";
+import { success } from "zod";
 
 export const generateReview = inngest.createFunction(
     { id: "generate-review", concurrency: 5 },
@@ -61,5 +62,26 @@ Format your response in markdown.`;
         await step.run("post-comment", async ()=>{
             await postReviewComment(token,owner,repo,prNumber,review)
         })
+        await step.run("save-review", async()=>{
+            const repository = await prisma.repository.findFirst({
+                where:{
+                    owner,
+                    name:repo
+                }
+            });
+            if (repository){
+                await prisma.review.create({
+                    data:{
+                        repositoryId:repository.id,
+                        prNumber,
+                        prTitle:title,
+                        prUrl:`https://github.com/${owner}/${repo}/pull/${prNumber}`,
+                        review,
+                        status:"completed",
+                    },
+                });
+            }
+        })
+        return {success:true}
     }
 )

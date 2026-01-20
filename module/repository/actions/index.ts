@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { createWebhook, getRepositories } from "@/module/github/lib/github"
 import { inngest } from "@/inngest/client"
+import { canConnectRepository,  incrementRepositoryCount } from "@/module/payment/lib/subscription"
 
 export const fetchRepositories = async (page: number = 1, per_page: number = 10) => {
     const session = await auth.api.getSession({
@@ -36,6 +37,12 @@ export const connectRepository = async (owner: string, repo: string, githubId: n
     if (!session) {
         throw new Error("Unauthorized");
     }
+
+    const canConnect = await canConnectRepository(session.user.id)
+    if (!canConnect) {
+        throw new Error("Repository limit reached. Please upgrade your subscription.");
+    }
+
     const webhooks = await createWebhook(owner, repo)
     if (webhooks) {
         await prisma.repository.upsert({
@@ -52,7 +59,10 @@ export const connectRepository = async (owner: string, repo: string, githubId: n
                 userId: session.user.id,
             }
         });
-    }
+
+        await incrementRepositoryCount(session.user.id)
+    
+     
     try {
         await inngest.send({
             name:"repository.connected",
@@ -65,5 +75,6 @@ export const connectRepository = async (owner: string, repo: string, githubId: n
     } catch (error) {
         console.error("failed to trigger repository indexing:",error);
     }
+}
     return webhooks;
 } 

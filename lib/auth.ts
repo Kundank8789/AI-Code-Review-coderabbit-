@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./db";
+import { polarClient } from "@/module/payment/config/polar";
+import { polar, checkout, portal, usage, webhooks } from "@polar-sh/better-auth";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -29,6 +31,27 @@ export const auth = betterAuth({
     // 🔥 THIS IS THE MISSING PIECE
     domain: "min-recent-spiritedly.ngrok-free.dev",
   },
+  plugins: [
+       polar({
+            client: polarClient,
+            createCustomerOnSignUp: true,
+            use: [
+                checkout({
+                    products: [
+                        {
+                            productId: "c3069a99-ef72-4318-b618-18493969acc5",
+                            slug: "code-rabbit" // Custom slug for easy reference in Checkout URL, e.g. /checkout/code-rabbit
+                        }
+                    ],
+                    successUrl: process.env.POLAR_SUCCESS_URL,
+                    authenticatedUsersOnly: true
+                }),
+                portal({
+                  returnUrl: process.env.NEXT_PUBLIC_APP_BASE_URL
+                })
+            ],
+        })
+  ],
 
   // 🔥 TRUST PROXY HEADERS FROM NGROK
   advanced: {
