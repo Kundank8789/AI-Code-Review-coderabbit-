@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./db";
 import { polarClient } from "@/module/payment/config/polar";
 import { polar, checkout, portal, usage, webhooks } from "@polar-sh/better-auth";
+import { updateUserTier } from "@/module/payment/lib/subscription";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -47,7 +48,27 @@ export const auth = betterAuth({
                     authenticatedUsersOnly: true
                 }),
                 portal({
-                  returnUrl: process.env.NEXT_PUBLIC_APP_BASE_URL
+                  returnUrl: process.env.NEXT_PUBLIC_APP_BASE_URL || "http://localhost:3000/dashboard"
+                }),
+                usage(),
+                webhooks({
+                  secret:process.env.POLAR_WEBHOOK_SECRET!,
+                  onSubscriptionActive:async (payload) => {
+                    const customerId = payload.data.customerId;
+
+                    const user = await prisma.user.findUnique({
+                      where:{
+                        polarCustomerId:customerId
+                      }
+                    });
+                    if (user){
+                      await updateUserTier(user.id,"PRO","ACTIVE", )
+                    }
+                  },
+                  onSubscriptionCanceled:async (payload) => {},
+                  onSubscriptionRevoked:async (payload) => {},
+                  onOrderPaid:async (payload) => {},
+                  onCustomerCreated:async (payload) => {}
                 })
             ],
         })

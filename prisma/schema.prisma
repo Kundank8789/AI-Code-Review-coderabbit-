@@ -27,7 +27,9 @@ model User {
   usuage        UserUsage?
   subscriptionTier  String @default("FREE")
   subscriptionStatus  String?
-  
+  polarCustomerId     String?   @unique
+  polarSubscriptionId String?   @unique
+
   @@map("user")
 }
 
