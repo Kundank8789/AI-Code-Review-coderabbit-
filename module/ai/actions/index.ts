@@ -56,7 +56,8 @@ export async function reviewPullRequest(
                 owner,
                 repo,
                 prNumber,
-                userId: repository.user.id
+                userId: repository.user.id,
+                title
             }
         })
 

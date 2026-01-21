@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./db";
-import { polarClient } from "@/module/payment/config/polar";
+import  {polarClient}  from "@/module/payment/config/polar";
 import { polar, checkout, portal, usage, webhooks } from "@polar-sh/better-auth";
 import { updateUserTier } from "@/module/payment/lib/subscription";
 
@@ -58,26 +58,65 @@ export const auth = betterAuth({
 
                     const user = await prisma.user.findUnique({
                       where:{
-                        polarCustomerId:customerId
+                        polarCustomerId :customerId
                       }
                     });
                     if (user){
                       await updateUserTier(user.id,"PRO","ACTIVE", )
                     }
                   },
-                  onSubscriptionCanceled:async (payload) => {},
-                  onSubscriptionRevoked:async (payload) => {},
-                  onOrderPaid:async (payload) => {},
-                  onCustomerCreated:async (payload) => {}
+                  onSubscriptionCanceled:async (payload) => {
+                    const customerId = payload.data.customerId;
+
+                    const user = await prisma.user.findUnique({
+                      where:{
+                        polarCustomerId :customerId
+                      }
+                    });
+                    if (user){
+                      await updateUserTier(user.id,"FREE","CANCLED" )
+                    }
+                  },
+                  onSubscriptionRevoked:async (payload) => {
+                    const customerId = payload.data.customerId;
+
+                    const user = await prisma.user.findUnique({
+                      where:{
+                        polarCustomerId :customerId
+                      }
+                    });
+                    if (user){
+                      await updateUserTier(user.id,"FREE","EXPIRED", )
+                    }
+                  },
+                  onOrderPaid:async (payload) => {
+                    const customerId = payload.data.customerId;
+
+                    const user = await prisma.user.findUnique({
+                      where:{
+                        polarCustomerId :customerId
+                      }
+                    });
+                    if (user){
+                      await updateUserTier(user.id,"PRO","ACTIVE", )
+                    }
+                  },
+                  onCustomerCreated:async (payload) => {
+                    const customerId = payload.data.id;
+
+                    const user = await prisma.user.findUnique({
+                      where:{
+                        polarCustomerId :customerId
+                      }
+                    });
+                    if (user){
+                      await updateUserTier(user.id,"PRO","ACTIVE", )
+                    }
+                  }
                 })
             ],
         })
   ],
-
-  // 🔥 TRUST PROXY HEADERS FROM NGROK
-  advanced: {
-    proxyHeaders: true,
-  },
-
+  
   debug: true,
 });

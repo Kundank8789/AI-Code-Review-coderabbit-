@@ -39,7 +39,7 @@ const ContributionGraph = () => {
             <div>
                 <ActivityCalendar
                     data={data.contributions}
-                    colourScheme={theme === "dark" ? "dark" : "light"}
+                    colorScheme={theme === "dark" ? "dark" : "light"}
                     blockSize={11}
                     blockMargin={4}
                     fontSize={14}

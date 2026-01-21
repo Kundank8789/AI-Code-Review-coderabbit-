@@ -4,13 +4,12 @@ import { retriveContext } from "@/module/ai/lib/rag";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import prisma from "@/lib/db";
-import { success } from "zod";
 
 export const generateReview = inngest.createFunction(
     { id: "generate-review", concurrency: 5 },
     { event: "pr.review.requested" },
     async ({ event, step }) => {
-        const { owner, repo, prNumber, userId } = event.data;
+        const { owner, repo, prNumber} = event.data;
         const { diff, title, description, token } = await step.run("fetch-pr-data", async () => {
             const account = await prisma.account.findFirst({
                 where: {
@@ -54,7 +53,7 @@ Format your response in markdown.`;
 
             const { text } = await generateText({
                 model: google("gemini-2.5-flash"),
-                prompt
+                prompt: promt
             })
             return text
 

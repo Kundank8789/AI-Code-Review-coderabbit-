@@ -19,6 +19,7 @@ export async function indexCodebase(repoId:string,files:{path:string, content:st
             const embedding = await generateEmbedding(truncatedContent);
             vectors.push({
                 id:`${repoId}-${file.path.replace(/\//g,'-')}`,
+                values:embedding,
                 metadata:{
                     repoId,
                     path:file.path,

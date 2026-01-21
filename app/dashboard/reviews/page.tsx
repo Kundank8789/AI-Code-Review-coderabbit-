@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getReviews } from "@/module/review/actions";
 import { formatDistanceToNow } from "date-fns";
 
+
+
 export default function ReviewsPage(){
     const {data:reviews, isLoading} = useQuery({
         queryKey:["reviews"],
@@ -34,7 +36,7 @@ export default function ReviewsPage(){
                     </Card>
                 ) : (
                     <div className="grid gap-4">
-                        {reviews?.map((review:any)=>(
+                        {reviews?.map((review)=>(
                             <Card key={review.id} className="hover:shadow-md transition-shadow">
                                 <CardHeader>
                                     <div className="flex items-start justify-between">
